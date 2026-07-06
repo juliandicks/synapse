@@ -1,10 +1,7 @@
 # Synapse — Interactive Graph Visualization
 
 [![npm version](https://img.shields.io/npm/v/synapse?color=blue)](https://www.npmjs.com/package/synapse)
-[![CI/CD](https://github.com/juliandicks/synapse/actions/workflows/ci.yml/badge.svg)](https://github.com/juliandicks/synapse/actions/workflows/ci.yml)
-[![License](https://img.shields.io/npm/l/synapse)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/synapse)](https://bundlephobia.com/package/synapse)
 
 > Canvas-based graph navigation tool for exploring relationships between entities. Click a node and it animates to center with the graph re-laying out around it.
 

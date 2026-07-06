@@ -1,6 +1,6 @@
 {
   "name": "synapse",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Interactive canvas-based graph visualization for exploring relationships between entities",
   "type": "module",
   "keywords": [
@@ -10,15 +10,15 @@
     "interactive",
     "network"
   ],
-  "homepage": "https://github.com/jules/synapse#readme",
+  "homepage": "https://github.com/juliandicks/synapse#readme",
   "bugs": {
-    "url": "https://github.com/jules/synapse/issues"
+    "url": "https://github.com/juliandicks/synapse/issues"
   },
   "license": "MIT",
-  "author": "Jules (https://github.com/jules)",
+  "author": "Jules (https://github.com/juliandicks)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jules/synapse.git"
+    "url": "git+https://github.com/juliandicks/synapse.git"
   },
   "engines": {
     "node": ">=18.0.0"
