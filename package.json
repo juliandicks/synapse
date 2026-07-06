@@ -1,5 +1,5 @@
 {
-  "name": "synapse",
+  "name": "@juliandicks/synapse",
   "version": "0.1.0",
   "description": "Interactive canvas-based graph visualization for exploring relationships between entities",
   "type": "module",
@@ -15,7 +15,7 @@
     "url": "https://github.com/juliandicks/synapse/issues"
   },
   "license": "MIT",
-  "author": "Jules (https://github.com/juliandicks)",
+  "author": "Julian Dicks (https://github.com/juliandicks)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/juliandicks/synapse.git"
