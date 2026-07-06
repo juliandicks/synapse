@@ -1,0 +1,33 @@
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+/node_modules/
+
+# Build output
+/dist/
+/dist-demo/
+/dist-test/
+/dist-ssr/
+/*.local
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
