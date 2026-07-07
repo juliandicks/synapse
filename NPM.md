@@ -60,7 +60,7 @@ If your account requires 2FA, you'll be prompted for an OTP code.
 npm publish --tag beta
 ```
 
-Users can install with `npm install synapse@beta`.
+Users can install with `npm install synapse-graph@beta`.
 
 ## Post-publish
 
@@ -72,7 +72,7 @@ Users can install with `npm install synapse@beta`.
 
 ### Package name already taken
 
-If `synapse` is taken, you'll need to use a scoped package:
+If the package name is taken, you'll need to use a scoped package:
 
 ```json
 {
@@ -106,11 +106,11 @@ npm run build
 To remove a published version (within 72 hours):
 
 ```bash
-npm unpublish synapse@1.0.0
+npm unpublish synapse-graph@1.0.0
 ```
 
 **Warning**: Unpublishing is destructive. Consider deprecating instead:
 
 ```bash
-npm deprecate synapse@1.0.0 "Use version 1.0.1 instead"
+npm deprecate synapse-graph@1.0.0 "Use version 1.0.1 instead"
 ```

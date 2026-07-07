@@ -3,8 +3,8 @@
 ## Custom Dataset
 
 ```ts
-import { Cortex, Renderer, InputHandler, loadGraphData } from 'synapse';
-import type { GraphData } from 'synapse';
+import { Cortex, Renderer, InputHandler, loadGraphData } from 'synapse-graph';
+import type { GraphData } from 'synapse-graph';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const cortex = new Cortex(400, 300);

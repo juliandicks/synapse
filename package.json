@@ -1,6 +1,6 @@
 {
-  "name": "@juliandicks/synapse",
-  "version": "0.1.0",
+  "name": "synapse-graph",
+  "version": "0.1.1",
   "description": "Interactive canvas-based graph visualization for exploring relationships between entities",
   "type": "module",
   "keywords": [

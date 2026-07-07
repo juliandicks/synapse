@@ -1,7 +1,10 @@
 # Synapse — Interactive Graph Visualization
 
-[![npm version](https://img.shields.io/npm/v/synapse?color=blue)](https://www.npmjs.com/package/synapse)
+[![npm version](https://img.shields.io/npm/v/synapse-graph?color=blue)](https://www.npmjs.com/package/synapse-graph)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/synapse-graph)](https://bundlephobia.com/package/synapse-graph)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org)
+
+![Synapse Demo](https://raw.githubusercontent.com/juliandicks/synapse/master/docs/demo.gif)
 
 > Canvas-based graph navigation tool for exploring relationships between entities. Click a node and it animates to center with the graph re-laying out around it.
 
@@ -20,12 +23,12 @@
 ### Using the library
 
 ```bash
-npm install synapse
+npm install synapse-graph
 ```
 
 ```ts
-import { Cortex, Renderer, InputHandler, loadGraphData } from 'synapse';
-import type { GraphData } from 'synapse';
+import { Cortex, Renderer, InputHandler, loadGraphData } from 'synapse-graph';
+import type { GraphData } from 'synapse-graph';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const cortex = new Cortex(window.innerWidth / 2, window.innerHeight / 2);
@@ -159,7 +162,7 @@ Supply your own `nodeStyle` callback to style nodes based on your domain data. T
 Adjust layout constants by importing them:
 
 ```ts
-import { HORIZONTAL_OFFSET, VERTICAL_OFFSET, NODE_VERTICAL_SPACING } from 'synapse';
+import { HORIZONTAL_OFFSET, VERTICAL_OFFSET, NODE_VERTICAL_SPACING } from 'synapse-graph';
 ```
 
 ## Examples
