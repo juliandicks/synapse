@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Synapse — Interactive Graph Visualization</title>
-  <meta name="description" content="Canvas-based graph navigation tool for exploring relationships between entities. Click a node and it animates to center with the graph re-laying out around it." />
+  <meta name="description" content="Canvas-based graph navigation tool for exploring relationships between entities. Activate a node and it animates to center with the graph re-laying out around it." />
   <meta property="og:title" content="Synapse — Interactive Graph Visualization" />
   <meta property="og:description" content="Canvas-based graph navigation tool for exploring relationships between entities." />
   <meta property="og:type" content="website" />
@@ -25,8 +25,13 @@
         <button id="forward" type="button" disabled>Forward</button>
       </div>
       <div class="panel-section">
-        <p id="status">Click a node or curve to navigate.</p>
+        <p id="status">Activate a node or curve to navigate.</p>
         <p id="details"></p>
+      </div>
+      <div class="panel-section shortcuts">
+        <p><kbd>/</kbd> search <kbd>Esc</kbd> clear</p>
+        <p><kbd>←</kbd><kbd>→</kbd> incoming/outgoing <kbd>↑</kbd><kbd>↓</kbd> peers</p>
+        <p><kbd>[</kbd><kbd>]</kbd> history</p>
       </div>
     </aside>
   </div>

@@ -6,7 +6,7 @@
 
 ![Synapse Demo](https://raw.githubusercontent.com/juliandicks/synapse/master/docs/demo.gif)
 
-> Canvas-based graph navigation tool for exploring relationships between entities. Click a node and it animates to center with the graph re-laying out around it.
+> Canvas-based graph navigation tool for exploring relationships between entities. Activate a node and it animates to center with the graph re-laying out around it.
 
 ## Features
 
@@ -41,7 +41,7 @@ const cortex = new Cortex(window.innerWidth / 2, window.innerHeight / 2, {
 const renderer = new Renderer(canvas);
 new InputHandler(cortex, renderer, canvas, {
   onNodeHover: ({ node }) => console.log('Hovered node:', node.source),
-  onCurveClick: ({ edges }) => console.log('Clicked relationship:', edges[0]?.source),
+  onCurveClick: ({ edges }) => console.log('Activated relationship:', edges[0]?.source),
 });
 
 const data: GraphData = { /* your graph data */ };
@@ -71,6 +71,8 @@ npm run dev
 ```
 
 Open http://localhost:5173 in your browser.
+
+The demo keeps keyboard behavior in parent code: `/` focuses search, `Escape` clears it, `[` and `]` move through history, and arrow keys navigate related visible nodes.
 
 ## Data Format
 

@@ -122,3 +122,25 @@ label {
   color: rgba(234, 234, 234, 0.82);
   white-space: pre-line;
 }
+
+.shortcuts {
+  color: rgba(234, 234, 234, 0.68);
+  font-size: 12px;
+}
+
+.shortcuts p + p {
+  margin-top: 6px;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 20px;
+  margin: 0 3px;
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}

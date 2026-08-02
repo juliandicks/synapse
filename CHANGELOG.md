@@ -9,7 +9,7 @@
 - Pointer-based input for mouse, touch, and stylus activation.
 - Input callbacks for node/curve activation and hover events.
 - Input handler cleanup via `destroy()`.
-- Philosophy demo search, history controls, and metadata panel.
+- Philosophy demo search, history controls, keyboard shortcuts, and metadata panel.
 
 ## [0.1.0] — 2026-07-06
 

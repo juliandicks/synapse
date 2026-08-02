@@ -221,18 +221,86 @@ function renderSearchResults(): void {
   }
 }
 
-searchInput.addEventListener('input', renderSearchResults);
+function canUseGraphShortcut(event: KeyboardEvent): boolean {
+  if (event.metaKey || event.ctrlKey || event.altKey) return false;
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return true;
+  return target === document.body || target === canvasEl;
+}
 
-backButton.addEventListener('click', () => {
+function navigateToFirst(nodes: GraphNode[], source: string): boolean {
+  const nextNode = nodes.find((node) => node.id !== cortex.centralNode.id);
+  if (!nextNode) return false;
+  return cortex.navigateTo(nextNode.id, { source });
+}
+
+function navigateToHistoryBack(): void {
   const nodeId = backStack.pop();
   if (!nodeId) return;
   cortex.navigateTo(nodeId, { source: 'history-back' });
-});
+}
 
-forwardButton.addEventListener('click', () => {
+function navigateToHistoryForward(): void {
   const nodeId = forwardStack.pop();
   if (!nodeId) return;
   cortex.navigateTo(nodeId, { source: 'history-forward' });
+}
+
+searchInput.addEventListener('input', renderSearchResults);
+
+backButton.addEventListener('click', () => {
+  navigateToHistoryBack();
+});
+
+forwardButton.addEventListener('click', () => {
+  navigateToHistoryForward();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === '/' && canUseGraphShortcut(event)) {
+    event.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+    return;
+  }
+
+  if (event.key === 'Escape' && document.activeElement === searchInput) {
+    searchInput.value = '';
+    renderSearchResults();
+    searchInput.blur();
+    return;
+  }
+
+  if (!canUseGraphShortcut(event)) return;
+
+  if (event.key === '[') {
+    event.preventDefault();
+    navigateToHistoryBack();
+    return;
+  }
+
+  if (event.key === ']') {
+    event.preventDefault();
+    navigateToHistoryForward();
+    return;
+  }
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    navigateToFirst(cortex.getIncomingNodes(), 'keyboard-incoming');
+    return;
+  }
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    navigateToFirst(cortex.getOutgoingNodes(), 'keyboard-outgoing');
+    return;
+  }
+
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    event.preventDefault();
+    navigateToFirst(cortex.getPeerNodes(), 'keyboard-peer');
+  }
 });
 
 function resize(): void {
@@ -255,7 +323,7 @@ new InputHandler(cortex, renderer, canvasEl, {
     updateDetails(node, 'Hovering node.');
   },
   onNodeLeave: () => {
-    updateDetails(cortex.centralNode, 'Click a node or curve to navigate.');
+    updateDetails(cortex.centralNode, 'Activate a node or curve to navigate.');
   },
   onCurveHover: ({ nodeId, edges }) => {
     const node = cortex.getNode(nodeId);
@@ -267,20 +335,20 @@ new InputHandler(cortex, renderer, canvasEl, {
     detailsEl.textContent = node ? describeNode(node) : '';
   },
   onCurveLeave: () => {
-    updateDetails(cortex.centralNode, 'Click a node or curve to navigate.');
+    updateDetails(cortex.centralNode, 'Activate a node or curve to navigate.');
   },
   onNodeClick: ({ node }) => {
-    updateDetails(node, 'Node click received by parent.');
+    updateDetails(node, 'Node activation received by parent.');
   },
   onCurveClick: ({ nodeId }) => {
     const node = cortex.getNode(nodeId);
     if (node) {
-      updateDetails(node, 'Curve click received by parent.');
+      updateDetails(node, 'Curve activation received by parent.');
     }
   },
 });
 loadGraphData(cortex, graphData);
-updateDetails(cortex.centralNode, 'Click a node or curve to navigate.');
+updateDetails(cortex.centralNode, 'Activate a node or curve to navigate.');
 updateNavigationControls();
 renderSearchResults();
 
