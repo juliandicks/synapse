@@ -10,8 +10,8 @@ export class InputHandler {
   config: InputHandlerConfig;
   private hoveredNodeId: string | null = null;
   private hoveredCurveNodeId: string | null = null;
-  private readonly clickHandler: (event: MouseEvent) => void;
-  private readonly mouseMoveHandler: (event: MouseEvent) => void;
+  private readonly pointerUpHandler: (event: PointerEvent) => void;
+  private readonly pointerMoveHandler: (event: PointerEvent) => void;
 
   constructor(
     cortex: Cortex,
@@ -23,25 +23,25 @@ export class InputHandler {
     this.renderer = renderer;
     this.canvas = canvas;
     this.config = config;
-    this.clickHandler = (event) => this.onClick(event);
-    this.mouseMoveHandler = (event) => this.onMouseMove(event);
+    this.pointerUpHandler = (event) => this.onPointerUp(event);
+    this.pointerMoveHandler = (event) => this.onPointerMove(event);
     this.setupListeners();
   }
 
   private setupListeners(): void {
-    this.canvas.addEventListener('click', this.clickHandler);
-    this.canvas.addEventListener('mousemove', this.mouseMoveHandler);
+    this.canvas.addEventListener('pointerup', this.pointerUpHandler);
+    this.canvas.addEventListener('pointermove', this.pointerMoveHandler);
   }
 
   destroy(): void {
-    this.canvas.removeEventListener('click', this.clickHandler);
-    this.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
+    this.canvas.removeEventListener('pointerup', this.pointerUpHandler);
+    this.canvas.removeEventListener('pointermove', this.pointerMoveHandler);
     if (this.config.updateCursor !== false) {
       this.canvas.style.cursor = 'default';
     }
   }
 
-  private coords(event: MouseEvent): { x: number; y: number } {
+  private coords(event: PointerEvent): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     return {
       x: event.clientX - rect.left,
@@ -49,7 +49,7 @@ export class InputHandler {
     };
   }
 
-  private onClick(event: MouseEvent): void {
+  private onPointerUp(event: PointerEvent): void {
     const { x, y } = this.coords(event);
     const hit = this.cortex.hitTest(x, y);
     if (hit) {
@@ -75,7 +75,7 @@ export class InputHandler {
   private findCurveHit(
     x: number,
     y: number,
-    originalEvent: MouseEvent
+    originalEvent: PointerEvent
   ): CurveInteractionEvent | null {
     for (const { nodeId, curve, edges } of this.cortex.getAllNodeCurves()) {
       if (this.distanceToCurveSync(x, y, curve) < CURVE_HIT_THRESHOLD) {
@@ -88,7 +88,7 @@ export class InputHandler {
   private updateHoverCallbacks(
     nextNodeId: string | null,
     nextCurve: CurveInteractionEvent | null,
-    event: MouseEvent,
+    event: PointerEvent,
     x: number,
     y: number
   ): void {
@@ -136,7 +136,7 @@ export class InputHandler {
     }
   }
 
-  private onMouseMove(event: MouseEvent): void {
+  private onPointerMove(event: PointerEvent): void {
     const { x, y } = this.coords(event);
     const hit = this.cortex.hitTest(x, y);
     this.renderer.setHoveredNode(hit);

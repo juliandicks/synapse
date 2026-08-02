@@ -6,7 +6,8 @@
 - Node search helper with parent-provided matcher support.
 - Pure graph query helpers for visible, connected, incoming, outgoing, and peer nodes.
 - Navigation callbacks with source labels for parent-owned history and UI.
-- Input callbacks for node/curve click and hover events.
+- Pointer-based input for mouse, touch, and stylus activation.
+- Input callbacks for node/curve activation and hover events.
 - Input handler cleanup via `destroy()`.
 - Philosophy demo search, history controls, and metadata panel.
 

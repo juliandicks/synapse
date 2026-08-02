@@ -104,7 +104,7 @@ export interface CortexConfig {
 export interface PointerGraphEvent {
   x: number;
   y: number;
-  originalEvent: MouseEvent;
+  originalEvent: PointerEvent;
 }
 
 export interface NodeInteractionEvent extends PointerGraphEvent {

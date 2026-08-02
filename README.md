@@ -10,11 +10,11 @@
 
 ## Features
 
-- **Animated navigation** — click any node to bring it to center with smooth transitions
+- **Animated navigation** — activate any node to bring it to center with smooth transitions
 - **Automatic layout** — nodes arrange themselves intelligently in five zones around the active node
 - **Relationship curves** — Bezier curves connect nodes with configurable styles
 - **Hover interactions** — nodes and curves highlight on hover
-- **Parent-controlled UI** — callbacks expose hover, click, and navigation events without owning your app chrome
+- **Parent-controlled UI** — callbacks expose hover, activation, and navigation events without owning your app chrome
 - **Search helpers** — find nodes by label or a custom matcher over your source objects
 - **HiDPI / Retina ready** — crisp rendering on high-density displays
 - **Zero dependencies** — lightweight, tree-shakeable, works in any modern browser
@@ -188,7 +188,7 @@ const renderer = new Renderer(canvas, {
 
 ### `InputHandler`
 
-Handles mouse click and hover events.
+Handles pointer activation and hover events for mouse, touch, and stylus input.
 
 ```ts
 const input = new InputHandler(cortex, renderer, canvas, {

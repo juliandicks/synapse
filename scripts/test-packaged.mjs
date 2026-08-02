@@ -250,6 +250,8 @@ const canvas = new MockCanvas();
 const cortex = new Cortex(400, 300);
 const renderer = new Renderer(canvas);
 new InputHandler(cortex, renderer, canvas);
+assert.ok(canvas.listeners.has('pointerup'), 'Expected pointerup listener');
+assert.ok(canvas.listeners.has('pointermove'), 'Expected pointermove listener');
 
 loadGraphData(cortex, data);
 settle(cortex);
@@ -269,7 +271,7 @@ const child = cortex.getChildNodes().find((node) => node.id === 'c');
 assert.ok(child, 'Expected node c to exist');
 assert.ok(child.targetOpacity > 0, 'Expected node c to be visible');
 
-canvas.dispatch('click', { clientX: child.x, clientY: child.y });
+canvas.dispatch('pointerup', { clientX: child.x, clientY: child.y });
 assert.equal(cortex.centralNode.id, 'c');
 
 settle(cortex);

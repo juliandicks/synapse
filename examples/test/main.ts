@@ -65,7 +65,7 @@ loadGraphData(cortex, testData);
 // Debug panel elements
 const debugElements = {
   centralNode: document.getElementById('central-node')!,
-  mousePos: document.getElementById('mouse-pos')!,
+  pointerPos: document.getElementById('pointer-pos')!,
   hitTest: document.getElementById('hit-test')!,
   hoveredNode: document.getElementById('hovered-node')!,
   hoveredCurve: document.getElementById('hovered-curve')!,
@@ -77,13 +77,12 @@ const debugElements = {
 
 const hitIndicator = document.getElementById('hit-indicator')!;
 
-// Mouse tracking
-let mouseX = 0;
-let mouseY = 0;
-canvas.addEventListener('mousemove', (e) => {
+let pointerX = 0;
+let pointerY = 0;
+canvas.addEventListener('pointermove', (e) => {
   const rect = canvas.getBoundingClientRect();
-  mouseX = e.clientX - rect.left;
-  mouseY = e.clientY - rect.top;
+  pointerX = e.clientX - rect.left;
+  pointerY = e.clientY - rect.top;
 
   hitIndicator.style.left = `${e.clientX}px`;
   hitIndicator.style.top = `${e.clientY}px`;
@@ -117,9 +116,9 @@ function loop(timestamp: number): void {
 
   // Update debug panel
   debugElements.centralNode.textContent = cortex.centralNode.id;
-  debugElements.mousePos.textContent = `${Math.round(mouseX)}, ${Math.round(mouseY)}`;
+  debugElements.pointerPos.textContent = `${Math.round(pointerX)}, ${Math.round(pointerY)}`;
 
-  const hit = cortex.hitTest(mouseX, mouseY);
+  const hit = cortex.hitTest(pointerX, pointerY);
   debugElements.hitTest.textContent = hit || 'none';
   debugElements.hitTest.className = `debug-value ${hit ? 'hit' : 'miss'}`;
 

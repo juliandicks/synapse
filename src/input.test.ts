@@ -30,6 +30,13 @@ function createMockContext() {
   } as unknown as CanvasRenderingContext2D;
 }
 
+function createPointerEvent(
+  type: 'pointermove' | 'pointerup',
+  options: MouseEventInit
+): PointerEvent {
+  return new MouseEvent(type, options) as unknown as PointerEvent;
+}
+
 const fixture: GraphData = {
   central: 'b',
   nodes: [
@@ -85,8 +92,8 @@ describe('InputHandler', () => {
       const addEventListenerSpy = vi.spyOn(canvas, 'addEventListener');
       new InputHandler(cortex, renderer, canvas);
 
-      expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
-      expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
+      expect(addEventListenerSpy).toHaveBeenCalledWith('pointerup', expect.any(Function));
+      expect(addEventListenerSpy).toHaveBeenCalledWith('pointermove', expect.any(Function));
     });
 
     it('removes event listeners on destroy', () => {
@@ -94,16 +101,16 @@ describe('InputHandler', () => {
 
       inputHandler.destroy();
 
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('pointerup', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('pointermove', expect.any(Function));
     });
   });
 
-  describe('click handling', () => {
-    it('navigates to clicked node', () => {
+  describe('pointer activation handling', () => {
+    it('navigates to activated node', () => {
       const child = cortex.getChildNodes().find((n) => n.id === 'c');
       if (child && child.targetOpacity > 0) {
-        const event = new MouseEvent('click', {
+        const event = createPointerEvent('pointerup', {
           clientX: child.x,
           clientY: child.y,
         });
@@ -113,9 +120,9 @@ describe('InputHandler', () => {
       }
     });
 
-    it('does not navigate when clicking empty space', () => {
+    it('does not navigate when activating empty space', () => {
       const initialCentral = cortex.centralNode.id;
-      const event = new MouseEvent('click', {
+      const event = createPointerEvent('pointerup', {
         clientX: 0,
         clientY: 0,
       });
@@ -124,7 +131,7 @@ describe('InputHandler', () => {
       expect(cortex.centralNode.id).toBe(initialCentral);
     });
 
-    it('navigates via curve click', () => {
+    it('navigates via curve activation', () => {
       const curves = cortex.getAllNodeCurves();
       if (curves.length > 0) {
         const curve = curves[0].curve;
@@ -142,18 +149,18 @@ describe('InputHandler', () => {
           3 * u * t * t * curve.cp2.y +
           t * t * t * curve.end.y;
 
-        const event = new MouseEvent('click', {
+        const event = createPointerEvent('pointerup', {
           clientX: pointX,
           clientY: pointY,
         });
         canvas.dispatchEvent(event);
 
-        // Curve click navigates to the target node (curve.nodeId)
+        // Curve activation navigates to the target node (curve.nodeId)
         expect(cortex.centralNode.id).toBe(curves[0].nodeId);
       }
     });
 
-    it('notifies parent code about node clicks without owning parent behavior', () => {
+    it('notifies parent code about node activations without owning parent behavior', () => {
       const onNodeClick = vi.fn();
       inputHandler.config = {
         navigateOnClick: false,
@@ -161,7 +168,7 @@ describe('InputHandler', () => {
       };
       const child = cortex.getChildNodes().find((node) => node.id === 'c');
       if (child && child.targetOpacity > 0) {
-        const event = new MouseEvent('click', {
+        const event = createPointerEvent('pointerup', {
           clientX: child.x,
           clientY: child.y,
         });
@@ -179,7 +186,7 @@ describe('InputHandler', () => {
       }
     });
 
-    it('notifies parent code about curve clicks', () => {
+    it('notifies parent code about curve activations', () => {
       const onCurveClick = vi.fn();
       inputHandler.config = {
         navigateOnClick: false,
@@ -201,7 +208,7 @@ describe('InputHandler', () => {
           3 * inverseTime * time * time * curve.cp2.y +
           time * time * time * curve.end.y;
 
-        const event = new MouseEvent('click', {
+        const event = createPointerEvent('pointerup', {
           clientX: pointX,
           clientY: pointY,
         });
@@ -220,10 +227,10 @@ describe('InputHandler', () => {
   });
 
   describe('hover handling', () => {
-    it('sets hovered node on mousemove', () => {
+    it('sets hovered node on pointer move', () => {
       const child = cortex.getChildNodes().find((n) => n.id === 'c');
       if (child && child.targetOpacity > 0) {
-        const event = new MouseEvent('mousemove', {
+        const event = createPointerEvent('pointermove', {
           clientX: child.x,
           clientY: child.y,
         });
@@ -234,7 +241,7 @@ describe('InputHandler', () => {
     });
 
     it('clears hovered node when moving away', () => {
-      const event = new MouseEvent('mousemove', {
+      const event = createPointerEvent('pointermove', {
         clientX: 0,
         clientY: 0,
       });
@@ -246,7 +253,7 @@ describe('InputHandler', () => {
     it('sets cursor to pointer when hovering', () => {
       const child = cortex.getChildNodes().find((n) => n.id === 'c');
       if (child && child.targetOpacity > 0) {
-        const event = new MouseEvent('mousemove', {
+        const event = createPointerEvent('pointermove', {
           clientX: child.x,
           clientY: child.y,
         });
@@ -257,7 +264,7 @@ describe('InputHandler', () => {
     });
 
     it('sets cursor to default when not hovering', () => {
-      const event = new MouseEvent('mousemove', {
+      const event = createPointerEvent('pointermove', {
         clientX: 0,
         clientY: 0,
       });
@@ -284,7 +291,7 @@ describe('InputHandler', () => {
           3 * u * t * t * curve.cp2.y +
           t * t * t * curve.end.y;
 
-        const event = new MouseEvent('mousemove', {
+        const event = createPointerEvent('pointermove', {
           clientX: testX,
           clientY: testY,
         });
@@ -295,7 +302,7 @@ describe('InputHandler', () => {
     });
 
     it('clears hovered curve when moving away', () => {
-      const event = new MouseEvent('mousemove', {
+      const event = createPointerEvent('pointermove', {
         clientX: 0,
         clientY: 0,
       });
@@ -314,13 +321,13 @@ describe('InputHandler', () => {
       const child = cortex.getChildNodes().find((node) => node.id === 'c');
       if (child && child.targetOpacity > 0) {
         canvas.dispatchEvent(
-          new MouseEvent('mousemove', {
+          createPointerEvent('pointermove', {
             clientX: child.x,
             clientY: child.y,
           })
         );
         canvas.dispatchEvent(
-          new MouseEvent('mousemove', {
+          createPointerEvent('pointermove', {
             clientX: 0,
             clientY: 0,
           })
@@ -347,7 +354,7 @@ describe('InputHandler', () => {
 
       const child = cortex.getChildNodes().find((n) => n.id === 'c');
       if (child && child.targetOpacity > 0) {
-        const event = new MouseEvent('click', {
+        const event = createPointerEvent('pointerup', {
           clientX: child.x + 100,
           clientY: child.y + 50,
         });
