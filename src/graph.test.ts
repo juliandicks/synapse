@@ -98,6 +98,30 @@ describe('Cortex', () => {
       expect(cortex.getAllNodes().length).toBe(initialNodeCount);
       expect(cortex.edges.length).toBe(initialEdgeCount);
     });
+
+    it('returns whether navigation happened', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      expect(cortex.navigateTo('c')).toBe(true);
+      expect(cortex.navigateTo('c')).toBe(false);
+      expect(cortex.navigateTo('missing')).toBe(false);
+    });
+
+    it('notifies parent code when navigation succeeds', () => {
+      const events: string[] = [];
+      const cortex = new Cortex(400, 300, {
+        onNavigate: ({ previousNode, currentNode, source }) => {
+          events.push(`${previousNode.id}:${currentNode.id}:${source}`);
+        },
+      });
+      loadGraphData(cortex, fixture);
+
+      cortex.navigateTo('c', { source: 'search' });
+      cortex.navigateTo('e', { source: 'input', silent: true });
+
+      expect(events).toEqual(['b:c:search']);
+    });
   });
 
   describe('node queries', () => {
@@ -134,6 +158,44 @@ describe('Cortex', () => {
       loadGraphData(cortex, fixture);
 
       expect(cortex.getNode('nonexistent')).toBeUndefined();
+    });
+
+    it('finds nodes by case-insensitive label substring', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      const matches = cortex.findNodes('c');
+
+      expect(matches.map((node) => node.id)).toEqual(['c']);
+    });
+
+    it('finds nodes with a parent-provided matcher', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, {
+        ...fixture,
+        nodes: fixture.nodes.map((node) => ({
+          ...node,
+          tags: node.id === 'e' ? ['target'] : [],
+        })),
+      });
+
+      const matches = cortex.findNodes('target', {
+        match: (node, query) => {
+          const source = node.source as { tags?: string[] };
+          return source.tags?.includes(query) ?? false;
+        },
+      });
+
+      expect(matches.map((node) => node.id)).toEqual(['e']);
+    });
+
+    it('returns no search results for an empty query', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      const matches = cortex.findNodes(' ', { limit: 1 });
+
+      expect(matches).toEqual([]);
     });
   });
 

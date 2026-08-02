@@ -1,12 +1,23 @@
 import './style.css';
 import { Cortex, Renderer, InputHandler, loadGraphData } from '../../src';
-import type { GraphData, RawNode, RawEdge } from '../../src';
+import type { GraphData, GraphNode, RawNode, RawEdge } from '../../src';
 import philosophersData from '../data/philosophers.graph.json';
 
-const canvas = document.getElementById('canvas') as HTMLCanvasElement | null;
-if (!canvas) {
-  throw new Error('Canvas not found');
+function getElement<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (!element) {
+    throw new Error(`Element not found: ${id}`);
+  }
+  return element as T;
 }
+
+const canvas = getElement<HTMLCanvasElement>('canvas');
+const searchInput = getElement<HTMLInputElement>('search');
+const resultsEl = getElement<HTMLDivElement>('results');
+const backButton = getElement<HTMLButtonElement>('back');
+const forwardButton = getElement<HTMLButtonElement>('forward');
+const statusEl = getElement<HTMLParagraphElement>('status');
+const detailsEl = getElement<HTMLParagraphElement>('details');
 
 const ctx = canvas.getContext('2d');
 if (!ctx) {
@@ -16,7 +27,24 @@ if (!ctx) {
 const canvasEl = canvas;
 const ctx2d = ctx;
 
-const cortex = new Cortex(0, 0);
+const backStack: string[] = [];
+const forwardStack: string[] = [];
+
+const cortex = new Cortex(0, 0, {
+  onNavigate: ({ previousNode, currentNode, source }) => {
+    if (source === 'history-back') {
+      forwardStack.push(previousNode.id);
+    } else if (source === 'history-forward') {
+      backStack.push(previousNode.id);
+    } else {
+      backStack.push(previousNode.id);
+      forwardStack.length = 0;
+    }
+    updateNavigationControls();
+    updateDetails(currentNode, `Centered via ${source ?? 'API'}.`);
+    renderSearchResults();
+  },
+});
 
 const PERIODS = [
   'ancient',
@@ -92,6 +120,87 @@ const renderer = new Renderer(canvas, {
   },
 });
 
+function stringField(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function describeNode(node: GraphNode): string {
+  const source = node.source as RawNode;
+  const fields = [
+    stringField(source.birthYear) ? `Born: ${source.birthYear}` : null,
+    stringField(source.period) ? `Period: ${source.period}` : null,
+    stringField(source.tradition) ? `Tradition: ${source.tradition}` : null,
+  ].filter((field): field is string => field !== null);
+
+  return fields.length > 0 ? `${node.label}\n${fields.join('\n')}` : node.label;
+}
+
+function updateDetails(node: GraphNode, status: string): void {
+  statusEl.textContent = status;
+  detailsEl.textContent = describeNode(node);
+}
+
+function updateNavigationControls(): void {
+  backButton.disabled = backStack.length === 0;
+  forwardButton.disabled = forwardStack.length === 0;
+}
+
+function matchesSearch(node: GraphNode, query: string): boolean {
+  const source = node.source as RawNode;
+  return [node.label, source.birthYear, source.period, source.tradition].some(
+    (value) =>
+      typeof value === 'string' && value.toLocaleLowerCase().includes(query)
+  );
+}
+
+function renderSearchResults(): void {
+  const query = searchInput.value;
+  const matches = cortex.findNodes(query, {
+    limit: 8,
+    match: matchesSearch,
+  });
+  resultsEl.replaceChildren();
+
+  if (query.trim().length === 0) {
+    resultsEl.textContent = 'Search labels, periods, traditions, or years.';
+    return;
+  }
+
+  if (matches.length === 0) {
+    resultsEl.textContent = 'No matching nodes.';
+    return;
+  }
+
+  for (const node of matches) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'result-button';
+    button.textContent = node.label;
+    button.setAttribute(
+      'aria-current',
+      node.id === cortex.centralNode.id ? 'true' : 'false'
+    );
+    button.addEventListener('click', () => {
+      cortex.navigateTo(node.id, { source: 'search' });
+    });
+    resultsEl.append(button);
+  }
+}
+
+searchInput.addEventListener('input', renderSearchResults);
+
+backButton.addEventListener('click', () => {
+  const nodeId = backStack.pop();
+  if (!nodeId) return;
+  cortex.navigateTo(nodeId, { source: 'history-back' });
+});
+
+forwardButton.addEventListener('click', () => {
+  const nodeId = forwardStack.pop();
+  if (!nodeId) return;
+  cortex.navigateTo(nodeId, { source: 'history-forward' });
+});
+
 function resize(): void {
   const dpr = window.devicePixelRatio || 1;
   const width = window.innerWidth;
@@ -107,8 +216,39 @@ function resize(): void {
 resize();
 window.addEventListener('resize', resize);
 
-new InputHandler(cortex, renderer, canvasEl);
+new InputHandler(cortex, renderer, canvasEl, {
+  onNodeHover: ({ node }) => {
+    updateDetails(node, 'Hovering node.');
+  },
+  onNodeLeave: () => {
+    updateDetails(cortex.centralNode, 'Click a node or curve to navigate.');
+  },
+  onCurveHover: ({ nodeId, edges }) => {
+    const node = cortex.getNode(nodeId);
+    const firstEdge = edges[0]?.source as RawEdge | undefined;
+    const relation = stringField(firstEdge?.relation);
+    statusEl.textContent = relation
+      ? `Hovering ${relation} relationship.`
+      : 'Hovering relationship.';
+    detailsEl.textContent = node ? describeNode(node) : '';
+  },
+  onCurveLeave: () => {
+    updateDetails(cortex.centralNode, 'Click a node or curve to navigate.');
+  },
+  onNodeClick: ({ node }) => {
+    updateDetails(node, 'Node click received by parent.');
+  },
+  onCurveClick: ({ nodeId }) => {
+    const node = cortex.getNode(nodeId);
+    if (node) {
+      updateDetails(node, 'Curve click received by parent.');
+    }
+  },
+});
 loadGraphData(cortex, graphData);
+updateDetails(cortex.centralNode, 'Click a node or curve to navigate.');
+updateNavigationControls();
+renderSearchResults();
 
 let lastTime = performance.now();
 function loop(timestamp: number): void {

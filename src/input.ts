@@ -1,23 +1,44 @@
 import { CURVE_HIT_THRESHOLD } from './constants';
 import type { Cortex } from './graph';
 import type { Renderer } from './renderer';
-import type { BezierCurve } from './types';
+import type { BezierCurve, CurveInteractionEvent, InputHandlerConfig } from './types';
 
 export class InputHandler {
   cortex: Cortex;
   renderer: Renderer;
   canvas: HTMLCanvasElement;
+  config: InputHandlerConfig;
+  private hoveredNodeId: string | null = null;
+  private hoveredCurveNodeId: string | null = null;
+  private readonly clickHandler: (event: MouseEvent) => void;
+  private readonly mouseMoveHandler: (event: MouseEvent) => void;
 
-  constructor(cortex: Cortex, renderer: Renderer, canvas: HTMLCanvasElement) {
+  constructor(
+    cortex: Cortex,
+    renderer: Renderer,
+    canvas: HTMLCanvasElement,
+    config: InputHandlerConfig = {}
+  ) {
     this.cortex = cortex;
     this.renderer = renderer;
     this.canvas = canvas;
+    this.config = config;
+    this.clickHandler = (event) => this.onClick(event);
+    this.mouseMoveHandler = (event) => this.onMouseMove(event);
     this.setupListeners();
   }
 
   private setupListeners(): void {
-    this.canvas.addEventListener('click', (e) => this.onClick(e));
-    this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+    this.canvas.addEventListener('click', this.clickHandler);
+    this.canvas.addEventListener('mousemove', this.mouseMoveHandler);
+  }
+
+  destroy(): void {
+    this.canvas.removeEventListener('click', this.clickHandler);
+    this.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
+    if (this.config.updateCursor !== false) {
+      this.canvas.style.cursor = 'default';
+    }
   }
 
   private coords(event: MouseEvent): { x: number; y: number } {
@@ -31,16 +52,87 @@ export class InputHandler {
   private onClick(event: MouseEvent): void {
     const { x, y } = this.coords(event);
     const hit = this.cortex.hitTest(x, y);
-    if (hit && hit !== 'central') {
-      this.cortex.navigateTo(hit);
+    if (hit) {
+      const node = this.cortex.getNode(hit);
+      if (node) {
+        this.config.onNodeClick?.({ x, y, originalEvent: event, node });
+      }
+      if (hit !== 'central' && this.config.navigateOnClick !== false) {
+        this.cortex.navigateTo(hit, { source: 'input' });
+      }
       return;
     }
 
-    for (const { nodeId, curve } of this.cortex.getAllNodeCurves()) {
-      if (this.distanceToCurveSync(x, y, curve) < CURVE_HIT_THRESHOLD) {
-        this.cortex.navigateTo(nodeId);
-        return;
+    const curveHit = this.findCurveHit(x, y, event);
+    if (curveHit) {
+      this.config.onCurveClick?.(curveHit);
+      if (this.config.navigateOnClick !== false) {
+        this.cortex.navigateTo(curveHit.nodeId, { source: 'input' });
       }
+    }
+  }
+
+  private findCurveHit(
+    x: number,
+    y: number,
+    originalEvent: MouseEvent
+  ): CurveInteractionEvent | null {
+    for (const { nodeId, curve, edges } of this.cortex.getAllNodeCurves()) {
+      if (this.distanceToCurveSync(x, y, curve) < CURVE_HIT_THRESHOLD) {
+        return { x, y, originalEvent, nodeId, edges, curve };
+      }
+    }
+    return null;
+  }
+
+  private updateHoverCallbacks(
+    nextNodeId: string | null,
+    nextCurve: CurveInteractionEvent | null,
+    event: MouseEvent,
+    x: number,
+    y: number
+  ): void {
+    if (this.hoveredNodeId && this.hoveredNodeId !== nextNodeId) {
+      const previousNode = this.cortex.getNode(this.hoveredNodeId);
+      if (previousNode) {
+        this.config.onNodeLeave?.({ x, y, originalEvent: event, node: previousNode });
+      }
+    }
+
+    if (this.hoveredCurveNodeId && this.hoveredCurveNodeId !== nextCurve?.nodeId) {
+      const previousCurve = this.cortex
+        .getAllNodeCurves()
+        .find((nodeCurve) => nodeCurve.nodeId === this.hoveredCurveNodeId);
+      if (previousCurve) {
+        this.config.onCurveLeave?.({
+          x,
+          y,
+          originalEvent: event,
+          nodeId: previousCurve.nodeId,
+          edges: previousCurve.edges,
+          curve: previousCurve.curve,
+        });
+      }
+    }
+
+    if (nextNodeId && this.hoveredNodeId !== nextNodeId) {
+      const nextNode = this.cortex.getNode(nextNodeId);
+      if (nextNode) {
+        this.config.onNodeHover?.({ x, y, originalEvent: event, node: nextNode });
+      }
+    }
+
+    if (nextCurve && this.hoveredCurveNodeId !== nextCurve.nodeId) {
+      this.config.onCurveHover?.(nextCurve);
+    }
+
+    this.hoveredNodeId = nextNodeId;
+    this.hoveredCurveNodeId = nextCurve?.nodeId ?? null;
+  }
+
+  private updateCursor(hovering: boolean): void {
+    if (this.config.updateCursor !== false) {
+      this.canvas.style.cursor = hovering ? 'pointer' : 'default';
     }
   }
 
@@ -50,21 +142,19 @@ export class InputHandler {
     this.renderer.setHoveredNode(hit);
 
     let hovering = hit !== null;
+    let curveHit: CurveInteractionEvent | null = null;
     if (hit) {
       this.renderer.setHoveredCurve(null);
     } else {
-      let curveHit: string | null = null;
-      for (const { nodeId, curve } of this.cortex.getAllNodeCurves()) {
-        if (this.distanceToCurveSync(x, y, curve) < CURVE_HIT_THRESHOLD) {
-          curveHit = nodeId;
-          hovering = true;
-          break;
-        }
+      curveHit = this.findCurveHit(x, y, event);
+      if (curveHit) {
+        hovering = true;
       }
-      this.renderer.setHoveredCurve(curveHit);
+      this.renderer.setHoveredCurve(curveHit?.nodeId ?? null);
     }
 
-    this.canvas.style.cursor = hovering ? 'pointer' : 'default';
+    this.updateHoverCallbacks(hit, curveHit, event, x, y);
+    this.updateCursor(hovering);
   }
 
   private distanceToCurveSync(

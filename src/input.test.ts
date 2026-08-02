@@ -88,6 +88,15 @@ describe('InputHandler', () => {
       expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
       expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
     });
+
+    it('removes event listeners on destroy', () => {
+      const removeEventListenerSpy = vi.spyOn(canvas, 'removeEventListener');
+
+      inputHandler.destroy();
+
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
+    });
   });
 
   describe('click handling', () => {
@@ -141,6 +150,71 @@ describe('InputHandler', () => {
 
         // Curve click navigates to the target node (curve.nodeId)
         expect(cortex.centralNode.id).toBe(curves[0].nodeId);
+      }
+    });
+
+    it('notifies parent code about node clicks without owning parent behavior', () => {
+      const onNodeClick = vi.fn();
+      inputHandler.config = {
+        navigateOnClick: false,
+        onNodeClick,
+      };
+      const child = cortex.getChildNodes().find((node) => node.id === 'c');
+      if (child && child.targetOpacity > 0) {
+        const event = new MouseEvent('click', {
+          clientX: child.x,
+          clientY: child.y,
+        });
+        canvas.dispatchEvent(event);
+
+        expect(onNodeClick).toHaveBeenCalledWith(
+          expect.objectContaining({
+            x: child.x,
+            y: child.y,
+            node: child,
+            originalEvent: event,
+          })
+        );
+        expect(cortex.centralNode.id).toBe('b');
+      }
+    });
+
+    it('notifies parent code about curve clicks', () => {
+      const onCurveClick = vi.fn();
+      inputHandler.config = {
+        navigateOnClick: false,
+        onCurveClick,
+      };
+      const curves = cortex.getAllNodeCurves();
+      if (curves.length > 0) {
+        const curve = curves[0].curve;
+        const time = 0.5;
+        const inverseTime = 1 - time;
+        const pointX =
+          inverseTime * inverseTime * inverseTime * curve.start.x +
+          3 * inverseTime * inverseTime * time * curve.cp1.x +
+          3 * inverseTime * time * time * curve.cp2.x +
+          time * time * time * curve.end.x;
+        const pointY =
+          inverseTime * inverseTime * inverseTime * curve.start.y +
+          3 * inverseTime * inverseTime * time * curve.cp1.y +
+          3 * inverseTime * time * time * curve.cp2.y +
+          time * time * time * curve.end.y;
+
+        const event = new MouseEvent('click', {
+          clientX: pointX,
+          clientY: pointY,
+        });
+        canvas.dispatchEvent(event);
+
+        expect(onCurveClick).toHaveBeenCalledWith(
+          expect.objectContaining({
+            nodeId: curves[0].nodeId,
+            edges: curves[0].edges,
+            curve,
+          })
+        );
+        expect(cortex.centralNode.id).toBe('b');
       }
     });
   });
@@ -228,6 +302,37 @@ describe('InputHandler', () => {
       canvas.dispatchEvent(event);
 
       expect(renderer.hoveredCurveNodeId).toBeNull();
+    });
+
+    it('notifies parent code when node hover changes', () => {
+      const onNodeHover = vi.fn();
+      const onNodeLeave = vi.fn();
+      inputHandler.config = {
+        onNodeHover,
+        onNodeLeave,
+      };
+      const child = cortex.getChildNodes().find((node) => node.id === 'c');
+      if (child && child.targetOpacity > 0) {
+        canvas.dispatchEvent(
+          new MouseEvent('mousemove', {
+            clientX: child.x,
+            clientY: child.y,
+          })
+        );
+        canvas.dispatchEvent(
+          new MouseEvent('mousemove', {
+            clientX: 0,
+            clientY: 0,
+          })
+        );
+
+        expect(onNodeHover).toHaveBeenCalledWith(
+          expect.objectContaining({ node: child })
+        );
+        expect(onNodeLeave).toHaveBeenCalledWith(
+          expect.objectContaining({ node: child })
+        );
+      }
     });
   });
 

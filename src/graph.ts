@@ -22,6 +22,9 @@ import type {
   NodeCurve,
   Point,
   EdgeType,
+  CortexConfig,
+  FindNodesOptions,
+  NavigateOptions,
 } from './types';
 
 function computeZoneBasePosition(zone: Zone, centerX: number, centerY: number): Point {
@@ -223,10 +226,12 @@ export class Cortex {
   edges: GraphEdge[] = [];
   nextNodeId = 0;
   nextEdgeId = 0;
+  config: CortexConfig;
 
-  constructor(centerX: number, centerY: number) {
+  constructor(centerX: number, centerY: number, config: CortexConfig = {}) {
     this.centerX = centerX;
     this.centerY = centerY;
+    this.config = config;
     this.centralNode = this.makeNode('Central', null, true);
     this.centralNode.x = centerX;
     this.centralNode.y = centerY;
@@ -327,12 +332,13 @@ export class Cortex {
     this.doLayout();
   }
 
-  navigateTo(id: string): void {
+  navigateTo(id: string, options: NavigateOptions = {}): boolean {
     const node = this.nodes.get(id);
-    if (!node || node.isCentral) return;
+    if (!node || node.isCentral) return false;
 
     const prevX = node.x;
     const prevY = node.y;
+    const previousNode = this.centralNode;
 
     node.isCentral = true;
     node.targetOpacity = 1;
@@ -341,6 +347,36 @@ export class Cortex {
 
     this.assignZones(prevX, prevY);
     this.doLayout();
+    if (!options.silent) {
+      this.config.onNavigate?.({
+        previousNode,
+        currentNode: this.centralNode,
+        source: options.source,
+      });
+    }
+    return true;
+  }
+
+  findNodes(query: string, options: FindNodesOptions = {}): GraphNode[] {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    if (!normalizedQuery) return [];
+    if (options.limit !== undefined && options.limit <= 0) return [];
+
+    const match =
+      options.match ??
+      ((node: GraphNode, searchQuery: string) =>
+        node.label.toLocaleLowerCase().includes(searchQuery));
+
+    const matches: GraphNode[] = [];
+    for (const [, node] of this.nodes) {
+      if (options.visibleOnly && node.targetOpacity < OPACITY_THRESHOLD) continue;
+      if (match(node, normalizedQuery)) {
+        matches.push(node);
+      }
+      if (options.limit !== undefined && matches.length >= options.limit) break;
+    }
+
+    return matches;
   }
 
   assignZones(originX: number, originY: number): void {

@@ -14,6 +14,8 @@
 - **Automatic layout** — nodes arrange themselves intelligently in five zones around the active node
 - **Relationship curves** — Bezier curves connect nodes with configurable styles
 - **Hover interactions** — nodes and curves highlight on hover
+- **Parent-controlled UI** — callbacks expose hover, click, and navigation events without owning your app chrome
+- **Search helpers** — find nodes by label or a custom matcher over your source objects
 - **HiDPI / Retina ready** — crisp rendering on high-density displays
 - **Zero dependencies** — lightweight, tree-shakeable, works in any modern browser
 - **TypeScript** — full type declarations included
@@ -31,9 +33,16 @@ import { Cortex, Renderer, InputHandler, loadGraphData } from 'synapse-graph';
 import type { GraphData } from 'synapse-graph';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const cortex = new Cortex(window.innerWidth / 2, window.innerHeight / 2);
+const cortex = new Cortex(window.innerWidth / 2, window.innerHeight / 2, {
+  onNavigate: ({ previousNode, currentNode, source }) => {
+    console.log(`Moved from ${previousNode.label} to ${currentNode.label}`, source);
+  },
+});
 const renderer = new Renderer(canvas);
-new InputHandler(cortex, renderer, canvas);
+new InputHandler(cortex, renderer, canvas, {
+  onNodeHover: ({ node }) => console.log('Hovered node:', node.source),
+  onCurveClick: ({ edges }) => console.log('Clicked relationship:', edges[0]?.source),
+});
 
 const data: GraphData = { /* your graph data */ };
 loadGraphData(cortex, data);
@@ -109,10 +118,11 @@ The core graph engine — manages nodes, edges, layout, and animation.
 
 | Method | Description |
 |--------|-------------|
-| `constructor(centerX, centerY)` | Create a new graph centered at given coordinates |
+| `constructor(centerX, centerY, config?)` | Create a new graph centered at given coordinates with optional navigation callbacks |
 | `addGraphNode(id, label, source?)` | Add a node with optional source object reference |
 | `addEdge(sourceId, targetId, type, source?)` | Add a directed edge with optional source object reference |
 | `navigateTo(id)` | Animate to make the given node the new center |
+| `findNodes(query, options?)` | Return nodes matching a label search or parent-provided matcher |
 | `loadGraphData(cortex, data)` | Bulk-load nodes and edges from a `GraphData` object |
 | `update(dt)` | Step the animation by `dt` seconds |
 | `getAllNodes()` | Return all nodes |
@@ -120,6 +130,27 @@ The core graph engine — manages nodes, edges, layout, and animation.
 | `getAllNodeCurves()` | Return bezier curves for all visible connections |
 | `hitTest(x, y)` | Return the node id at the given canvas coordinates |
 | `removeNode(id)` | Remove a node and its edges |
+
+`navigateTo` accepts an optional source label so parent code can distinguish UI actions:
+
+```ts
+cortex.navigateTo('kant', { source: 'search' });
+```
+
+`findNodes` performs a case-insensitive label search by default. Use `match` when your app wants to search source data that Synapse does not model:
+
+```ts
+const matches = cortex.findNodes('stoic', {
+  limit: 8,
+  match: (node, query) => {
+    const source = node.source as { tradition?: string };
+    return (
+      node.label.toLocaleLowerCase().includes(query) ||
+      source.tradition?.toLocaleLowerCase().includes(query) === true
+    );
+  },
+});
+```
 
 ### `Renderer`
 
@@ -148,7 +179,17 @@ const renderer = new Renderer(canvas, {
 Handles mouse click and hover events.
 
 ```ts
-new InputHandler(cortex, renderer, canvas);
+const input = new InputHandler(cortex, renderer, canvas, {
+  navigateOnClick: true,
+  onNodeClick: ({ node }) => {
+    console.log(node.source);
+  },
+  onNodeHover: ({ node }) => {
+    console.log(node.label);
+  },
+});
+
+input.destroy();
 ```
 
 ## Customization

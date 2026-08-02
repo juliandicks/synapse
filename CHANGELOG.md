@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Node search helper with parent-provided matcher support.
+- Navigation callbacks with source labels for parent-owned history and UI.
+- Input callbacks for node/curve click and hover events.
+- Input handler cleanup via `destroy()`.
+- Philosophy demo search, history controls, and metadata panel.
+
 ## [0.1.0] — 2026-07-06
 
 Initial release.

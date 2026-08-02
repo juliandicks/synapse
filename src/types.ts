@@ -80,6 +80,54 @@ export interface DisplayConfig {
   hover?: HoverStyle;
 }
 
+export interface FindNodesOptions {
+  limit?: number;
+  visibleOnly?: boolean;
+  match?: (node: GraphNode, query: string) => boolean;
+}
+
+export interface NavigateOptions {
+  source?: string;
+  silent?: boolean;
+}
+
+export interface NavigationEvent {
+  previousNode: GraphNode;
+  currentNode: GraphNode;
+  source?: string;
+}
+
+export interface CortexConfig {
+  onNavigate?: (event: NavigationEvent) => void;
+}
+
+export interface PointerGraphEvent {
+  x: number;
+  y: number;
+  originalEvent: MouseEvent;
+}
+
+export interface NodeInteractionEvent extends PointerGraphEvent {
+  node: GraphNode;
+}
+
+export interface CurveInteractionEvent extends PointerGraphEvent {
+  nodeId: string;
+  edges: GraphEdge[];
+  curve: BezierCurve;
+}
+
+export interface InputHandlerConfig {
+  navigateOnClick?: boolean;
+  updateCursor?: boolean;
+  onNodeClick?: (event: NodeInteractionEvent) => void;
+  onCurveClick?: (event: CurveInteractionEvent) => void;
+  onNodeHover?: (event: NodeInteractionEvent) => void;
+  onNodeLeave?: (event: NodeInteractionEvent) => void;
+  onCurveHover?: (event: CurveInteractionEvent) => void;
+  onCurveLeave?: (event: CurveInteractionEvent) => void;
+}
+
 export interface RawNode {
   id: string;
   label: string;
