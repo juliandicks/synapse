@@ -13,6 +13,7 @@ Before publishing, ensure:
 - [ ] All tests pass: `npm test`
 - [ ] Type checking passes: `npm run typecheck`
 - [ ] Build succeeds: `npm run build`
+- [ ] Packaged smoke test passes: `npm run test:packaged`
 - [ ] Version number is updated in `package.json`
 - [ ] `CHANGELOG.md` is updated with the new version
 - [ ] README.md reflects any API changes
@@ -45,6 +46,14 @@ npm pack
 ```
 
 This creates a `.tgz` file. Inspect it to ensure only necessary files are included.
+
+### Smoke test the packed artifact
+
+```bash
+npm run test:packaged
+```
+
+This packs the library, installs the tarball into a clean temp project, and runs a small import/render/navigation check against the published entrypoint.
 
 ### Publish to NPM
 
