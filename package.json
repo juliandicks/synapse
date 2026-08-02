@@ -21,7 +21,7 @@
     "url": "git+https://github.com/juliandicks/synapse.git"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.18.1"
   },
   "main": "dist/synapse.cjs",
   "module": "dist/synapse.mjs",
