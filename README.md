@@ -72,7 +72,7 @@ npm run dev
 
 Open http://localhost:5173 in your browser.
 
-The demo keeps keyboard behavior in parent code: `/` focuses search, `Escape` clears it, `Tab` and `Shift+Tab` focus visible nodes, `Enter` navigates to the focused node, and `[` / `]` move through history.
+The demo keeps keyboard behavior in parent code: `/` focuses search, `Escape` clears it, `Tab` and `Shift+Tab` focus all visible nodes including the center, `Enter` navigates to the focused node, and `[` / `]` move through history.
 
 ## Data Format
 

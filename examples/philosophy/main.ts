@@ -233,8 +233,10 @@ function canUseGraphShortcut(event: KeyboardEvent): boolean {
 function getKeyboardCandidates(): GraphNode[] {
   return cortex
     .getVisibleNodes()
-    .filter((node) => !node.isCentral)
     .sort((a, b) => {
+      if (a.isCentral !== b.isCentral) {
+        return a.isCentral ? -1 : 1;
+      }
       const zoneCompare = a.zone.localeCompare(b.zone);
       return zoneCompare === 0 ? a.label.localeCompare(b.label) : zoneCompare;
     });
@@ -261,12 +263,19 @@ function focusKeyboardCandidate(direction: 1 | -1): void {
   focusedNodeId = nextNode.id;
   renderer.setHoveredNode(nextNode.id);
   renderer.setHoveredCurve(null);
-  updateDetails(nextNode, 'Keyboard focus. Press Enter to navigate.');
+  updateDetails(
+    nextNode,
+    nextNode.isCentral
+      ? 'Keyboard focus on center node.'
+      : 'Keyboard focus. Press Enter to navigate.'
+  );
 }
 
 function navigateToFocusedNode(): void {
   if (!focusedNodeId) return;
-  cortex.navigateTo(focusedNodeId, { source: 'keyboard' });
+  if (!cortex.navigateTo(focusedNodeId, { source: 'keyboard' })) {
+    updateDetails(cortex.centralNode, 'Already centered.');
+  }
 }
 
 function navigateToHistoryBack(): void {
