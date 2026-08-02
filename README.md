@@ -101,13 +101,20 @@ interface GraphData {
 }
 ```
 
-**Mapping edge types**: The library only supports `'child'` and `'peer'` edge types. Map your domain-specific edge types before loading:
+**Mapping edge types**: the library only accepts `'child'` and `'peer'` edge types. Normalize your domain-specific data before loading so Synapse stays focused on graph display and interaction:
 
 ```ts
-const mappedEdges = rawEdges.map(e => ({
-  ...e,
-  type: e.type === 'influence' ? 'child' : e.type
-}));
+const graphData: GraphData = {
+  central: domainData.central,
+  nodes: domainData.nodes,
+  edges: domainData.edges.map((edge) => ({
+    ...edge,
+    domainType: edge.type,
+    type: edge.type === 'influence' ? 'child' : 'peer',
+  })),
+};
+
+loadGraphData(cortex, graphData);
 ```
 
 ## API Reference

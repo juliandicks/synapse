@@ -1,7 +1,19 @@
 import './style.css';
 import { Cortex, Renderer, InputHandler, loadGraphData } from '../../src';
-import type { GraphData, GraphNode, RawNode, RawEdge } from '../../src';
+import type { EdgeType, GraphData, GraphNode, RawEdge, RawNode } from '../../src';
 import philosophersData from '../data/philosophers.graph.json';
+
+type PhilosophyEdge = Omit<RawEdge, 'type'> & {
+  type: 'influence' | 'peer';
+  relation?: string;
+  confidence?: string;
+};
+
+type PhilosophyGraphEdge = RawEdge & {
+  domainType: PhilosophyEdge['type'];
+  relation?: string;
+  confidence?: string;
+};
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -65,21 +77,34 @@ function periodColor(period: string): string | undefined {
   return `hsl(270, 55%, ${20 + (index / (PERIODS.length - 1)) * 55}%)`;
 }
 
-// Map philosophy data to library format
 const rawNodes = philosophersData.nodes as RawNode[];
-const rawEdges = philosophersData.edges as RawEdge[];
+const rawEdges = philosophersData.edges as PhilosophyEdge[];
 
-// Map 'influence' to 'child' for the library
-const mappedEdges = rawEdges.map((e) => ({
-  ...e,
-  type: e.type === 'influence' ? 'child' : e.type,
-}));
+function mapPhilosophyEdgeType(edge: PhilosophyEdge): EdgeType {
+  return edge.type === 'influence' ? 'child' : 'peer';
+}
 
-const graphData: GraphData = {
-  central: philosophersData.central,
-  nodes: rawNodes,
-  edges: mappedEdges,
-};
+function toSynapseGraphData(
+  nodes: RawNode[],
+  edges: PhilosophyEdge[],
+  central: string
+): GraphData {
+  return {
+    central,
+    nodes,
+    edges: edges.map((edge): PhilosophyGraphEdge => ({
+      ...edge,
+      type: mapPhilosophyEdgeType(edge),
+      domainType: edge.type,
+    })),
+  };
+}
+
+const graphData = toSynapseGraphData(
+  rawNodes,
+  rawEdges,
+  philosophersData.central
+);
 
 const traditions = [
   ...new Set(
@@ -103,9 +128,9 @@ const renderer = new Renderer(canvas, {
     return { fillColor, strokeColor };
   },
   edgeStyle: (source) => {
-    const edge = source as RawEdge;
-    const relation = edge.relation as string | undefined;
-    const confidence = edge.confidence as string | undefined;
+    const edge = source as PhilosophyGraphEdge;
+    const relation = edge.relation;
+    const confidence = edge.confidence;
     let color: string | undefined;
     let strokeWidth = 1;
     if (relation === 'critique-response') {
@@ -225,7 +250,7 @@ new InputHandler(cortex, renderer, canvasEl, {
   },
   onCurveHover: ({ nodeId, edges }) => {
     const node = cortex.getNode(nodeId);
-    const firstEdge = edges[0]?.source as RawEdge | undefined;
+    const firstEdge = edges[0]?.source as PhilosophyGraphEdge | undefined;
     const relation = stringField(firstEdge?.relation);
     statusEl.textContent = relation
       ? `Hovering ${relation} relationship.`
