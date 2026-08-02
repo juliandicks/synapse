@@ -312,6 +312,63 @@ export class Cortex {
     return this.getAllNodes().filter((n) => !n.isCentral);
   }
 
+  getVisibleNodes(): GraphNode[] {
+    return this.getAllNodes().filter(
+      (node) => node.targetOpacity >= OPACITY_THRESHOLD
+    );
+  }
+
+  getConnectedNodes(id: string = this.centralNode.id): GraphNode[] {
+    const connectedIds = new Set<string>();
+    for (const edge of this.edges) {
+      if (edge.sourceId === id) {
+        connectedIds.add(edge.targetId);
+      }
+      if (edge.targetId === id) {
+        connectedIds.add(edge.sourceId);
+      }
+    }
+
+    return this.nodesFromIds(connectedIds, id);
+  }
+
+  getIncomingNodes(id: string = this.centralNode.id): GraphNode[] {
+    const incomingIds = new Set<string>();
+    for (const edge of this.edges) {
+      if (edge.type === 'child' && edge.targetId === id) {
+        incomingIds.add(edge.sourceId);
+      }
+    }
+
+    return this.nodesFromIds(incomingIds, id);
+  }
+
+  getOutgoingNodes(id: string = this.centralNode.id): GraphNode[] {
+    const outgoingIds = new Set<string>();
+    for (const edge of this.edges) {
+      if (edge.type === 'child' && edge.sourceId === id) {
+        outgoingIds.add(edge.targetId);
+      }
+    }
+
+    return this.nodesFromIds(outgoingIds, id);
+  }
+
+  getPeerNodes(id: string = this.centralNode.id): GraphNode[] {
+    const peerIds = new Set<string>();
+    for (const edge of this.edges) {
+      if (edge.type !== 'peer') continue;
+      if (edge.sourceId === id) {
+        peerIds.add(edge.targetId);
+      }
+      if (edge.targetId === id) {
+        peerIds.add(edge.sourceId);
+      }
+    }
+
+    return this.nodesFromIds(peerIds, id);
+  }
+
   setInitialView(id: string): void {
     const node = this.nodes.get(id);
     if (!node) return;
@@ -549,6 +606,18 @@ export class Cortex {
       }
     }
     return null;
+  }
+
+  private nodesFromIds(ids: Set<string>, excludeId: string): GraphNode[] {
+    const nodes: GraphNode[] = [];
+    for (const id of ids) {
+      if (id === excludeId) continue;
+      const node = this.nodes.get(id);
+      if (node) {
+        nodes.push(node);
+      }
+    }
+    return nodes;
   }
 
   private makeNode(label: string, source: unknown, isCentral: boolean): GraphNode {

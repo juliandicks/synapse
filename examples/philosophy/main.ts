@@ -151,10 +151,19 @@ function stringField(value: unknown): string | null {
 
 function describeNode(node: GraphNode): string {
   const source = node.source as RawNode;
+  const incomingNodes = cortex.getIncomingNodes(node.id);
+  const outgoingNodes = cortex.getOutgoingNodes(node.id);
+  const peerNodes = cortex.getPeerNodes(node.id);
   const fields = [
     stringField(source.birthYear) ? `Born: ${source.birthYear}` : null,
     stringField(source.period) ? `Period: ${source.period}` : null,
     stringField(source.tradition) ? `Tradition: ${source.tradition}` : null,
+    `Incoming: ${incomingNodes.length}`,
+    `Outgoing: ${outgoingNodes.length}`,
+    `Peers: ${peerNodes.length}`,
+    outgoingNodes.length > 0
+      ? `Influences: ${outgoingNodes.map((connected) => connected.label).join(', ')}`
+      : null,
   ].filter((field): field is string => field !== null);
 
   return fields.length > 0 ? `${node.label}\n${fields.join('\n')}` : node.label;

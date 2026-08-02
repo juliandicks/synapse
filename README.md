@@ -134,6 +134,11 @@ The core graph engine — manages nodes, edges, layout, and animation.
 | `update(dt)` | Step the animation by `dt` seconds |
 | `getAllNodes()` | Return all nodes |
 | `getChildNodes()` | Return all non-central nodes |
+| `getVisibleNodes()` | Return nodes currently visible in the active view |
+| `getConnectedNodes(id?)` | Return all nodes connected to the given node, defaulting to the center |
+| `getIncomingNodes(id?)` | Return incoming `child` nodes for the given node |
+| `getOutgoingNodes(id?)` | Return outgoing `child` nodes for the given node |
+| `getPeerNodes(id?)` | Return `peer` nodes connected to the given node |
 | `getAllNodeCurves()` | Return bezier curves for all visible connections |
 | `hitTest(x, y)` | Return the node id at the given canvas coordinates |
 | `removeNode(id)` | Remove a node and its edges |

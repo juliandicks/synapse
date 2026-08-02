@@ -197,6 +197,50 @@ describe('Cortex', () => {
 
       expect(matches).toEqual([]);
     });
+
+    it('returns nodes visible from the current center', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      expect(cortex.getVisibleNodes().map((node) => node.id).sort()).toEqual([
+        'a',
+        'b',
+        'c',
+        'd',
+      ]);
+    });
+
+    it('returns all connected nodes for an id', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      expect(cortex.getConnectedNodes('b').map((node) => node.id).sort()).toEqual([
+        'a',
+        'c',
+        'd',
+      ]);
+    });
+
+    it('returns incoming child nodes for an id', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      expect(cortex.getIncomingNodes('b').map((node) => node.id)).toEqual(['a']);
+    });
+
+    it('returns outgoing child nodes for an id', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      expect(cortex.getOutgoingNodes('b').map((node) => node.id)).toEqual(['c']);
+    });
+
+    it('returns peer nodes for an id', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+
+      expect(cortex.getPeerNodes('b').map((node) => node.id)).toEqual(['d']);
+    });
   });
 
   describe('layout', () => {

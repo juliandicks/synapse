@@ -4,6 +4,7 @@
 
 ### Added
 - Node search helper with parent-provided matcher support.
+- Pure graph query helpers for visible, connected, incoming, outgoing, and peer nodes.
 - Navigation callbacks with source labels for parent-owned history and UI.
 - Input callbacks for node/curve click and hover events.
 - Input handler cleanup via `destroy()`.
