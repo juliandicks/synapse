@@ -1,6 +1,6 @@
 {
   "name": "synapse-graph",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Interactive canvas-based graph visualization for exploring relationships between entities",
   "type": "module",
   "keywords": [
