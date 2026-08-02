@@ -2,6 +2,7 @@ import {
   COLORS,
   CENTRAL_STROKE_WIDTH,
   CHILD_STROKE_WIDTH,
+  LABEL_GAP,
   zoneToLabelAlign,
 } from './constants';
 import type {
@@ -116,11 +117,11 @@ export class Renderer {
     if (zoneToLabelAlign(node.zone) === 'left') {
       this.ctx.textAlign = 'right';
       this.ctx.fillStyle = COLORS.label;
-      this.ctx.fillText(node.label, node.x - node.radius - 8, node.y);
+      this.ctx.fillText(node.label, node.x - node.radius - LABEL_GAP, node.y);
     } else {
       this.ctx.textAlign = 'left';
       this.ctx.fillStyle = COLORS.label;
-      this.ctx.fillText(node.label, node.x + node.radius + 8, node.y);
+      this.ctx.fillText(node.label, node.x + node.radius + LABEL_GAP, node.y);
     }
     this.ctx.restore();
   }

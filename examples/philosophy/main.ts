@@ -24,6 +24,7 @@ function getElement<T extends HTMLElement>(id: string): T {
 }
 
 const canvas = getElement<HTMLCanvasElement>('canvas');
+const graphStage = getElement<HTMLElement>('graph-stage');
 const searchInput = getElement<HTMLInputElement>('search');
 const resultsEl = getElement<HTMLDivElement>('results');
 const backButton = getElement<HTMLButtonElement>('back');
@@ -38,6 +39,8 @@ if (!ctx) {
 
 const canvasEl = canvas;
 const ctx2d = ctx;
+let renderWidth = 0;
+let renderHeight = 0;
 
 const backStack: string[] = [];
 const forwardStack: string[] = [];
@@ -345,18 +348,23 @@ document.addEventListener('keydown', (event) => {
 
 function resize(): void {
   const dpr = window.devicePixelRatio || 1;
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+  const width = graphStage.clientWidth;
+  const height = graphStage.clientHeight;
+  renderWidth = width;
+  renderHeight = height;
   canvasEl.width = width * dpr;
   canvasEl.height = height * dpr;
-  canvasEl.style.width = `${width}px`;
-  canvasEl.style.height = `${height}px`;
   ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
-  cortex.resize(width / 2, height / 2);
+  cortex.resize(width / 2, height / 2, {
+    width,
+    height,
+    padding: 48,
+  });
 }
 
 resize();
 window.addEventListener('resize', resize);
+new ResizeObserver(resize).observe(graphStage);
 
 new InputHandler(cortex, renderer, canvasEl, {
   onNodeHover: ({ node }) => {
@@ -401,8 +409,8 @@ function loop(timestamp: number): void {
     cortex.centralNode,
     cortex.getChildNodes(),
     cortex.getAllNodeCurves(),
-    window.innerWidth,
-    window.innerHeight
+    renderWidth,
+    renderHeight
   );
   requestAnimationFrame(loop);
 }

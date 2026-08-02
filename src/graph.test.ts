@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Cortex } from './graph';
 import { loadGraphData } from './loader';
+import { CHILD_RADIUS, DEFAULT_LABEL_WIDTH, LABEL_GAP } from './constants';
 import type { GraphData } from './types';
 
 const fixture: GraphData = {
@@ -280,6 +281,121 @@ describe('Cortex', () => {
         const dist = Math.hypot(node.x - 400, node.y - 300);
         expect(dist).toBeGreaterThan(50);
       }
+    });
+
+    it('preserves default layout when no bounds are configured', () => {
+      const cortex = new Cortex(400, 300);
+      loadGraphData(cortex, fixture);
+      cortex.update(1);
+
+      const incoming = cortex.getNode('a');
+      const outgoing = cortex.getNode('c');
+      const peer = cortex.getNode('d');
+
+      expect(incoming?.targetX).toBe(100);
+      expect(incoming?.targetY).toBe(100);
+      expect(outgoing?.targetX).toBe(100);
+      expect(outgoing?.targetY).toBe(500);
+      expect(peer?.targetX).toBe(700);
+      expect(peer?.targetY).toBe(300);
+    });
+
+    it('clamps layout offsets when viewport bounds are configured', () => {
+      const cortex = new Cortex(160, 120, {
+        layout: {
+          width: 320,
+          height: 240,
+          padding: 32,
+        },
+      });
+      loadGraphData(cortex, fixture);
+      cortex.update(1);
+
+      const visible = cortex.getVisibleNodes();
+
+      for (const node of visible) {
+        expect(node.targetX).toBeGreaterThanOrEqual(32);
+        expect(node.targetX).toBeLessThanOrEqual(288);
+        expect(node.targetY).toBeGreaterThanOrEqual(32);
+        expect(node.targetY).toBeLessThanOrEqual(208);
+      }
+    });
+
+    it('squishes horizontal layout distances as width narrows', () => {
+      const cortex = new Cortex(160, 120);
+      loadGraphData(cortex, fixture);
+
+      cortex.resize(160, 120, {
+        width: 320,
+        height: 600,
+        padding: 32,
+      });
+
+      const incoming = cortex.getNode('a');
+      const outgoing = cortex.getNode('c');
+      const peer = cortex.getNode('d');
+      const labelReach = CHILD_RADIUS + LABEL_GAP + DEFAULT_LABEL_WIDTH;
+
+      expect(incoming?.targetX).toBe(32 + labelReach);
+      expect(outgoing?.targetX).toBe(32 + labelReach);
+      expect(peer?.targetX).toBe(320 - 32 - labelReach);
+    });
+
+    it('reserves horizontal space for typical child labels', () => {
+      const cortex = new Cortex(200, 150);
+      loadGraphData(cortex, fixture);
+
+      cortex.resize(200, 150, {
+        width: 400,
+        height: 300,
+        padding: 24,
+        labelWidth: 112,
+      });
+
+      const incoming = cortex.getNode('a');
+      const outgoing = cortex.getNode('c');
+      const peer = cortex.getNode('d');
+      const labelReach = CHILD_RADIUS + LABEL_GAP + 112;
+
+      expect(incoming!.targetX - labelReach).toBeGreaterThanOrEqual(24);
+      expect(outgoing!.targetX - labelReach).toBeGreaterThanOrEqual(24);
+      expect(peer!.targetX + labelReach).toBeLessThanOrEqual(400 - 24);
+    });
+
+    it('compresses zone spacing down to the configured minimum', () => {
+      const cortex = new Cortex(160, 120, {
+        layout: {
+          width: 320,
+          height: 160,
+          padding: 32,
+          minNodeSpacing: 40,
+        },
+      });
+      const childNodes = Array.from({ length: 9 }, (_, index) => ({
+        id: `child-${index}`,
+        label: `Child ${index}`,
+      }));
+      loadGraphData(cortex, {
+        central: 'center',
+        nodes: [
+          { id: 'center', label: 'Center' },
+          ...childNodes,
+        ],
+        edges: childNodes.map((node) => ({
+          from: 'center',
+          to: node.id,
+          type: 'child',
+        })),
+      });
+      cortex.update(1);
+
+      const bottomLeftNodes = cortex
+        .getOutgoingNodes()
+        .filter((node) => node.zone === 'bottomLeft')
+        .sort((a, b) => a.targetY - b.targetY);
+
+      expect(bottomLeftNodes.length).toBe(5);
+      expect(bottomLeftNodes[1].targetY - bottomLeftNodes[0].targetY).toBe(40);
     });
   });
 

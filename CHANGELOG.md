@@ -1,15 +1,34 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.0] — 2026-08-02
 
 ### Added
+- Philosophy demo search, history controls, keyboard shortcuts, and metadata panel.
+- Viewport-aware layout configuration for embedded and smaller canvases.
+- Resizable philosophy demo canvas positioned beside the control panel.
+- Horizontal layout label-width reserve so responsive canvases keep typical side labels visible.
+
+### Changed
+- Demo keyboard navigation is parent-owned and uses `Tab` / `Shift+Tab` to focus visible nodes and `Enter` to navigate.
+- Demo keyboard focus order includes the center node for completeness.
+
+## [0.2.0] — 2026-08-02
+
+### Added
+- Parent-controlled navigation callbacks with source labels.
+- Parent-controlled input callbacks for node/curve activation and hover events.
 - Node search helper with parent-provided matcher support.
 - Pure graph query helpers for visible, connected, incoming, outgoing, and peer nodes.
-- Navigation callbacks with source labels for parent-owned history and UI.
-- Pointer-based input for mouse, touch, and stylus activation.
-- Input callbacks for node/curve activation and hover events.
 - Input handler cleanup via `destroy()`.
-- Philosophy demo search, history controls, keyboard shortcuts, and metadata panel.
+
+### Changed
+- Input handling now uses pointer events for mouse, touch, and stylus activation.
+- Example data normalization stays in parent code before calling `loadGraphData`.
+- Minimum Node engine is now current LTS, `>=24.18.1`.
+
+### Fixed
+- Added the missing DOM test environment dependency.
+- Updated audited development transitive dependencies.
 
 ## [0.1.0] — 2026-07-06
 

@@ -53,7 +53,11 @@ function resize(): void {
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  cortex.resize(width / 2, height / 2);
+  cortex.resize(width / 2, height / 2, {
+    width,
+    height,
+    padding: 32,
+  });
 }
 
 resize();

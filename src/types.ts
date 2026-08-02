@@ -97,7 +97,22 @@ export interface NavigationEvent {
   source?: string;
 }
 
+export interface LayoutConfig {
+  width?: number;
+  height?: number;
+  padding?: number;
+  minNodeSpacing?: number;
+  minHorizontalOffset?: number;
+  minRightZoneDistance?: number;
+  labelWidth?: number;
+  horizontalOffset?: number;
+  verticalOffset?: number;
+  rightZoneDistance?: number;
+  nodeVerticalSpacing?: number;
+}
+
 export interface CortexConfig {
+  layout?: LayoutConfig;
   onNavigate?: (event: NavigationEvent) => void;
 }
 

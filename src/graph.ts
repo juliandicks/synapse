@@ -5,6 +5,8 @@ import {
   VERTICAL_OFFSET,
   RIGHT_ZONE_DISTANCE,
   NODE_VERTICAL_SPACING,
+  DEFAULT_LABEL_WIDTH,
+  LABEL_GAP,
   BEZIER_CONFIG,
   POSITION_THRESHOLD,
   RADIUS_THRESHOLD,
@@ -24,34 +26,188 @@ import type {
   EdgeType,
   CortexConfig,
   FindNodesOptions,
+  LayoutConfig,
   NavigateOptions,
 } from './types';
 
-function computeZoneBasePosition(zone: Zone, centerX: number, centerY: number): Point {
+interface ResolvedLayoutConfig {
+  width?: number;
+  height?: number;
+  padding: number;
+  minNodeSpacing: number;
+  minHorizontalOffset: number;
+  minRightZoneDistance: number;
+  labelWidth: number;
+  horizontalOffset: number;
+  verticalOffset: number;
+  rightZoneDistance: number;
+  nodeVerticalSpacing: number;
+}
+
+const DEFAULT_LAYOUT: ResolvedLayoutConfig = {
+  padding: 32,
+  minNodeSpacing: 44,
+  minHorizontalOffset: 72,
+  minRightZoneDistance: 72,
+  labelWidth: DEFAULT_LABEL_WIDTH,
+  horizontalOffset: HORIZONTAL_OFFSET,
+  verticalOffset: VERTICAL_OFFSET,
+  rightZoneDistance: RIGHT_ZONE_DISTANCE,
+  nodeVerticalSpacing: NODE_VERTICAL_SPACING,
+};
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function resolveLayoutConfig(
+  layout: LayoutConfig,
+  centerX: number,
+  centerY: number
+): ResolvedLayoutConfig {
+  const resolved = {
+    ...DEFAULT_LAYOUT,
+    ...layout,
+  };
+  const padding = Math.max(0, resolved.padding);
+  const minNodeSpacing = Math.max(0, resolved.minNodeSpacing);
+  const minHorizontalOffset = Math.max(0, resolved.minHorizontalOffset);
+  const minRightZoneDistance = Math.max(0, resolved.minRightZoneDistance);
+  const labelWidth = Math.max(0, resolved.labelWidth);
+  const horizontalNodeLabelReach = CHILD_RADIUS + LABEL_GAP + labelWidth;
+
+  if (resolved.width === undefined || resolved.height === undefined) {
+    return {
+      ...resolved,
+      padding,
+      minNodeSpacing,
+      minHorizontalOffset,
+      minRightZoneDistance,
+      labelWidth,
+    };
+  }
+
+  const availableLeft = Math.max(0, centerX - padding - horizontalNodeLabelReach);
+  const availableRight = Math.max(
+    0,
+    resolved.width - centerX - padding - horizontalNodeLabelReach
+  );
+  const availableTop = Math.max(0, centerY - padding);
+  const availableBottom = Math.max(0, resolved.height - centerY - padding);
+  const maxHorizontalOffset = Math.min(availableLeft, availableRight);
+  const horizontalOffset = clamp(
+    resolved.horizontalOffset,
+    Math.min(minHorizontalOffset, maxHorizontalOffset),
+    maxHorizontalOffset
+  );
+  const verticalOffset = Math.min(
+    resolved.verticalOffset,
+    availableTop,
+    availableBottom
+  );
+  const rightZoneDistance = clamp(
+    resolved.rightZoneDistance,
+    Math.min(minRightZoneDistance, availableRight),
+    availableRight
+  );
+
+  return {
+    ...resolved,
+    padding,
+    minNodeSpacing,
+    minHorizontalOffset,
+    minRightZoneDistance,
+    labelWidth,
+    horizontalOffset,
+    verticalOffset,
+    rightZoneDistance,
+  };
+}
+
+function clampYToBounds(y: number, layout: ResolvedLayoutConfig): number {
+  if (layout.height === undefined) return y;
+  return clamp(y, layout.padding, Math.max(layout.padding, layout.height - layout.padding));
+}
+
+function computeZoneBasePosition(
+  zone: Zone,
+  centerX: number,
+  centerY: number,
+  layout: ResolvedLayoutConfig
+): Point {
   switch (zone) {
     case 'topLeft':
-      return { x: centerX - HORIZONTAL_OFFSET, y: centerY - VERTICAL_OFFSET };
+      return {
+        x: centerX - layout.horizontalOffset,
+        y: clampYToBounds(centerY - layout.verticalOffset, layout),
+      };
     case 'topRight':
-      return { x: centerX + HORIZONTAL_OFFSET, y: centerY - VERTICAL_OFFSET };
+      return {
+        x: centerX + layout.horizontalOffset,
+        y: clampYToBounds(centerY - layout.verticalOffset, layout),
+      };
     case 'bottomLeft':
-      return { x: centerX - HORIZONTAL_OFFSET, y: centerY + VERTICAL_OFFSET };
+      return {
+        x: centerX - layout.horizontalOffset,
+        y: clampYToBounds(centerY + layout.verticalOffset, layout),
+      };
     case 'bottomRight':
-      return { x: centerX + HORIZONTAL_OFFSET, y: centerY + VERTICAL_OFFSET };
+      return {
+        x: centerX + layout.horizontalOffset,
+        y: clampYToBounds(centerY + layout.verticalOffset, layout),
+      };
     case 'right':
-      return { x: centerX + RIGHT_ZONE_DISTANCE, y: centerY };
+      return {
+        x: centerX + layout.rightZoneDistance,
+        y: clampYToBounds(centerY, layout),
+      };
   }
 }
 
-function layoutNodes(nodes: GraphNode[], centerX: number, centerY: number): void {
+function resolveZoneSpacing(
+  visibleCount: number,
+  layout: ResolvedLayoutConfig
+): number {
+  if (layout.height === undefined || visibleCount < 2) {
+    return layout.nodeVerticalSpacing;
+  }
+  const availableHeight = Math.max(0, layout.height - layout.padding * 2);
+  const fitSpacing = availableHeight / (visibleCount - 1);
+  return Math.max(
+    layout.minNodeSpacing,
+    Math.min(layout.nodeVerticalSpacing, fitSpacing)
+  );
+}
+
+function resolveZoneStartY(
+  baseY: number,
+  totalHeight: number,
+  layout: ResolvedLayoutConfig
+): number {
+  const proposedY = baseY - totalHeight / 2;
+  if (layout.height === undefined) return proposedY;
+
+  const minY = layout.padding;
+  const maxY = layout.height - layout.padding;
+  if (totalHeight > maxY - minY) return minY;
+  return clamp(proposedY, minY, maxY - totalHeight);
+}
+
+function layoutNodes(
+  nodes: GraphNode[],
+  centerX: number,
+  centerY: number,
+  layout: ResolvedLayoutConfig
+): void {
   for (const node of nodes) {
     if (node.isCentral) {
       node.targetX = centerX;
-      node.targetY = centerY;
+      node.targetY = clampYToBounds(centerY, layout);
       node.targetRadius = CENTRAL_RADIUS;
       continue;
     }
     if (node.targetOpacity < OPACITY_THRESHOLD) continue;
-    const base = computeZoneBasePosition(node.zone, centerX, centerY);
+    const base = computeZoneBasePosition(node.zone, centerX, centerY, layout);
     node.targetX = base.x;
     node.targetY = base.y;
     node.targetRadius = CHILD_RADIUS;
@@ -71,13 +227,14 @@ function layoutNodes(nodes: GraphNode[], centerX: number, centerY: number): void
         n.zone === zone
     );
     if (visible.length < 2) continue;
-    const base = computeZoneBasePosition(zone, centerX, centerY);
-    const totalHeight = (visible.length - 1) * NODE_VERTICAL_SPACING;
-    const startY = base.y - totalHeight / 2;
+    const base = computeZoneBasePosition(zone, centerX, centerY, layout);
+    const spacing = resolveZoneSpacing(visible.length, layout);
+    const totalHeight = (visible.length - 1) * spacing;
+    const startY = resolveZoneStartY(base.y, totalHeight, layout);
     visible.sort((a, b) => a.label.localeCompare(b.label));
     for (let i = 0; i < visible.length; i++) {
       visible[i].targetX = base.x;
-      visible[i].targetY = startY + i * NODE_VERTICAL_SPACING;
+      visible[i].targetY = startY + i * spacing;
     }
   }
 }
@@ -227,11 +384,13 @@ export class Cortex {
   nextNodeId = 0;
   nextEdgeId = 0;
   config: CortexConfig;
+  layoutConfig: LayoutConfig;
 
   constructor(centerX: number, centerY: number, config: CortexConfig = {}) {
     this.centerX = centerX;
     this.centerY = centerY;
     this.config = config;
+    this.layoutConfig = config.layout ?? {};
     this.centralNode = this.makeNode('Central', null, true);
     this.centralNode.x = centerX;
     this.centralNode.y = centerY;
@@ -527,13 +686,29 @@ export class Cortex {
 
   doLayout(): void {
     const all = this.getAllNodes();
-    all.filter((n) => !n.isCentral && n.targetOpacity >= OPACITY_THRESHOLD);
-    layoutNodes(all, this.centerX, this.centerY);
+    const layout = resolveLayoutConfig(
+      this.layoutConfig,
+      this.centerX,
+      this.centerY
+    );
+    layoutNodes(all, this.centerX, this.centerY, layout);
   }
 
-  resize(centerX: number, centerY: number): void {
+  resize(centerX: number, centerY: number, layout: LayoutConfig = {}): void {
     this.centerX = centerX;
     this.centerY = centerY;
+    this.layoutConfig = {
+      ...this.layoutConfig,
+      ...layout,
+    };
+    this.doLayout();
+  }
+
+  setLayoutConfig(layout: LayoutConfig): void {
+    this.layoutConfig = {
+      ...this.layoutConfig,
+      ...layout,
+    };
     this.doLayout();
   }
 

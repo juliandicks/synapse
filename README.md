@@ -72,7 +72,7 @@ npm run dev
 
 Open http://localhost:5173 in your browser.
 
-The demo keeps keyboard behavior in parent code: `/` focuses search, `Escape` clears it, `Tab` and `Shift+Tab` focus all visible nodes including the center, `Enter` navigates to the focused node, and `[` / `]` move through history.
+The demo keeps keyboard behavior in parent code: `/` focuses search, `Escape` clears it, `Tab` and `Shift+Tab` focus all visible nodes including the center, `Enter` navigates to the focused node, and `[` / `]` move through history. The graph canvas sits to the right of the controls and can be resized to exercise embedded layouts.
 
 ## Data Format
 
@@ -127,13 +127,15 @@ The core graph engine — manages nodes, edges, layout, and animation.
 
 | Method | Description |
 |--------|-------------|
-| `constructor(centerX, centerY, config?)` | Create a new graph centered at given coordinates with optional navigation callbacks |
+| `constructor(centerX, centerY, config?)` | Create a new graph centered at given coordinates with optional layout and navigation config |
 | `addGraphNode(id, label, source?)` | Add a node with optional source object reference |
 | `addEdge(sourceId, targetId, type, source?)` | Add a directed edge with optional source object reference |
 | `navigateTo(id)` | Animate to make the given node the new center |
 | `findNodes(query, options?)` | Return nodes matching a label search or parent-provided matcher |
 | `loadGraphData(cortex, data)` | Bulk-load nodes and edges from a `GraphData` object |
 | `update(dt)` | Step the animation by `dt` seconds |
+| `resize(centerX, centerY, layout?)` | Update center coordinates and optional viewport-aware layout bounds |
+| `setLayoutConfig(layout)` | Update responsive layout options without changing the center |
 | `getAllNodes()` | Return all nodes |
 | `getChildNodes()` | Return all non-central nodes |
 | `getVisibleNodes()` | Return nodes currently visible in the active view |
@@ -214,11 +216,36 @@ Supply your own `nodeStyle` callback to style nodes based on your domain data. T
 
 ### Layout
 
-Adjust layout constants by importing them:
+By default, Synapse uses the same fixed layout distances as earlier versions. For embedded canvases or smaller windows, pass viewport bounds so layout offsets and zone spacing can clamp to available space:
 
 ```ts
-import { HORIZONTAL_OFFSET, VERTICAL_OFFSET, NODE_VERTICAL_SPACING } from 'synapse-graph';
+function resize() {
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  cortex.resize(width / 2, height / 2, {
+    width,
+    height,
+    padding: 32,
+    labelWidth: 96,
+    minNodeSpacing: 44,
+    minHorizontalOffset: 72,
+    minRightZoneDistance: 72,
+  });
+}
 ```
+
+You can still tune layout distances explicitly:
+
+```ts
+cortex.setLayoutConfig({
+  horizontalOffset: 240,
+  verticalOffset: 160,
+  rightZoneDistance: 220,
+  nodeVerticalSpacing: 56,
+});
+```
+
+When `width` and `height` are provided, Synapse squishes horizontal offsets, right-zone distance, vertical offsets, and vertical node spacing toward the configured minimums while keeping visible nodes inside the padded bounds where possible. Horizontal scaling also reserves each child node's radius, label gap, and `labelWidth` so typical side labels do not clip at the canvas edge.
 
 ## Examples
 

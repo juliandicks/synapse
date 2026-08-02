@@ -8,6 +8,8 @@ export const HORIZONTAL_OFFSET = 300;
 export const VERTICAL_OFFSET = 200;
 export const RIGHT_ZONE_DISTANCE = 300;
 export const NODE_VERTICAL_SPACING = 65;
+export const LABEL_GAP = 8;
+export const DEFAULT_LABEL_WIDTH = 96;
 export const BEZIER_SEGMENTS = 20;
 export const CURVE_HIT_THRESHOLD = 12;
 

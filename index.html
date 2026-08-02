@@ -13,7 +13,6 @@
 </head>
 <body>
   <div id="app">
-    <canvas id="canvas"></canvas>
     <aside id="panel" aria-label="Graph controls">
       <div class="panel-section">
         <label for="search">Search graph</label>
@@ -35,6 +34,9 @@
         <p><kbd>[</kbd><kbd>]</kbd> history</p>
       </div>
     </aside>
+    <main id="graph-stage" aria-label="Graph canvas">
+      <canvas id="canvas"></canvas>
+    </main>
   </div>
   <script type="module" src="/examples/philosophy/main.ts"></script>
 </body>
