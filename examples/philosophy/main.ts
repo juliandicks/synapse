@@ -41,6 +41,7 @@ const ctx2d = ctx;
 
 const backStack: string[] = [];
 const forwardStack: string[] = [];
+let focusedNodeId: string | null = null;
 
 const cortex = new Cortex(0, 0, {
   onNavigate: ({ previousNode, currentNode, source }) => {
@@ -53,6 +54,7 @@ const cortex = new Cortex(0, 0, {
       forwardStack.length = 0;
     }
     updateNavigationControls();
+    clearKeyboardFocus();
     updateDetails(currentNode, `Centered via ${source ?? 'API'}.`);
     renderSearchResults();
   },
@@ -228,10 +230,43 @@ function canUseGraphShortcut(event: KeyboardEvent): boolean {
   return target === document.body || target === canvasEl;
 }
 
-function navigateToFirst(nodes: GraphNode[], source: string): boolean {
-  const nextNode = nodes.find((node) => node.id !== cortex.centralNode.id);
-  if (!nextNode) return false;
-  return cortex.navigateTo(nextNode.id, { source });
+function getKeyboardCandidates(): GraphNode[] {
+  return cortex
+    .getVisibleNodes()
+    .filter((node) => !node.isCentral)
+    .sort((a, b) => {
+      const zoneCompare = a.zone.localeCompare(b.zone);
+      return zoneCompare === 0 ? a.label.localeCompare(b.label) : zoneCompare;
+    });
+}
+
+function clearKeyboardFocus(): void {
+  focusedNodeId = null;
+  renderer.setHoveredNode(null);
+  renderer.setHoveredCurve(null);
+}
+
+function focusKeyboardCandidate(direction: 1 | -1): void {
+  const candidates = getKeyboardCandidates();
+  if (candidates.length === 0) return;
+  const currentIndex = focusedNodeId
+    ? candidates.findIndex((node) => node.id === focusedNodeId)
+    : -1;
+  const fallbackIndex = direction === 1 ? 0 : candidates.length - 1;
+  const nextIndex =
+    currentIndex === -1
+      ? fallbackIndex
+      : (currentIndex + direction + candidates.length) % candidates.length;
+  const nextNode = candidates[nextIndex];
+  focusedNodeId = nextNode.id;
+  renderer.setHoveredNode(nextNode.id);
+  renderer.setHoveredCurve(null);
+  updateDetails(nextNode, 'Keyboard focus. Press Enter to navigate.');
+}
+
+function navigateToFocusedNode(): void {
+  if (!focusedNodeId) return;
+  cortex.navigateTo(focusedNodeId, { source: 'keyboard' });
 }
 
 function navigateToHistoryBack(): void {
@@ -275,31 +310,27 @@ document.addEventListener('keydown', (event) => {
 
   if (event.key === '[') {
     event.preventDefault();
+    clearKeyboardFocus();
     navigateToHistoryBack();
     return;
   }
 
   if (event.key === ']') {
     event.preventDefault();
+    clearKeyboardFocus();
     navigateToHistoryForward();
     return;
   }
 
-  if (event.key === 'ArrowLeft') {
+  if (event.key === 'Tab') {
     event.preventDefault();
-    navigateToFirst(cortex.getIncomingNodes(), 'keyboard-incoming');
+    focusKeyboardCandidate(event.shiftKey ? -1 : 1);
     return;
   }
 
-  if (event.key === 'ArrowRight') {
+  if (event.key === 'Enter') {
     event.preventDefault();
-    navigateToFirst(cortex.getOutgoingNodes(), 'keyboard-outgoing');
-    return;
-  }
-
-  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-    event.preventDefault();
-    navigateToFirst(cortex.getPeerNodes(), 'keyboard-peer');
+    navigateToFocusedNode();
   }
 });
 
