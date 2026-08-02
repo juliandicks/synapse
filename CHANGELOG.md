@@ -1,12 +1,20 @@
 # Changelog
 
+## [1.0.0] — 2026-08-02
+
+### Added
+- Stable v1 API for the canvas graph engine, renderer, loader, interaction handler, and TypeScript types.
+- Viewport-aware layout configuration for embedded and smaller canvases.
+- Resizable philosophy demo canvas positioned beside the control panel.
+- Horizontal layout label-width reserve so responsive canvases keep typical side labels visible.
+
+### Changed
+- Responsive layout now squishes horizontal offsets, right-zone distance, vertical offsets, and node spacing toward configured minimums while preserving padded bounds where possible.
+
 ## [0.3.0] — 2026-08-02
 
 ### Added
 - Philosophy demo search, history controls, keyboard shortcuts, and metadata panel.
-- Viewport-aware layout configuration for embedded and smaller canvases.
-- Resizable philosophy demo canvas positioned beside the control panel.
-- Horizontal layout label-width reserve so responsive canvases keep typical side labels visible.
 
 ### Changed
 - Demo keyboard navigation is parent-owned and uses `Tab` / `Shift+Tab` to focus visible nodes and `Enter` to navigate.
